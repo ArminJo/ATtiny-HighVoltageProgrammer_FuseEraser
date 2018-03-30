@@ -15,16 +15,18 @@
 // - Added option to press button instead of sending character to start programming
 // - Improved serial output information
 // - After programming the internal LED blinks
+// - Added timeout for reading data
 
-#define USE_BUTTON_FOR_START_PROGRAMMING // otherwise a character must be sent to start programming
+#define VERSION "2.2"
+
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
 
 // Pin 13 has an LED connected on most Arduino boards.
 #define LED_PIN 13
-#ifdef USE_BUTTON_FOR_START_PROGRAMMING
-#define START_BUTTON_PIN 6
-#endif
+#define START_BUTTON_PIN 6 // connect a button to ground
+
+#define READING_TIMEOUT_MILLIS 300 // for each shiftOut -> effective timeout is 4 times ore more this single timeout
 
 #define RST A4 // Output to level shifter for !RESET from transistor
 #define SCI A5 // Target Clock Input
@@ -53,6 +55,8 @@ void readFuses();
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
 
+    Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from  " __DATE__));
+
     pinMode(LED_PIN, OUTPUT);
 
     pinMode(VCC, OUTPUT);
@@ -66,21 +70,16 @@ void setup() {
     delay(500);
     digitalWrite(LED_PIN, LOW);
 
-#ifdef USE_BUTTON_FOR_START_PROGRAMMING
-    Serial.println("Press key at pin 6 to start process...");
+    Serial.println("Press button at pin 6 to start process or enter any character to start process...");
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
-#else
-    Serial.println("Enter any character to start process...");
-#endif
 }
 
 void loop() {
-#ifdef USE_BUTTON_FOR_START_PROGRAMMING
-    if (!digitalRead(START_BUTTON_PIN)) {
-#else
-        if (Serial.available() > 0) {
+    if (!digitalRead(START_BUTTON_PIN) || Serial.available() > 0) {
+        delay(100); // debouncing wait for serial buffer to be filled (eg. with CR/LF)
+        while (Serial.available() > 0) {
             Serial.read();
-#endif
+        }
         digitalWrite(LED_PIN, HIGH);
         pinMode(SDO, OUTPUT); // Set SDO to output
         digitalWrite(SDI, LOW);
@@ -130,7 +129,11 @@ void loop() {
             Serial.println("Write EFUSE: 0xFF");
             writeFuse(EFUSE, 0xFF);
         } else {
-            Serial.println("No valid ATtiny signature detected!");
+            //Wait for button to release
+            while (!digitalRead(START_BUTTON_PIN))
+                ;
+            delay(100); // debouncing
+            Serial.println("No valid ATtiny signature detected! Try again.");
             // try again
             return;
         }
@@ -156,9 +159,13 @@ void loop() {
 
 byte shiftOut(byte val1, byte val2) {
     int inBits = 0;
-    //Wait until SDO goes high
-    while (!digitalRead(SDO))
-        ;
+    uint32_t tMillis = millis();
+    //Wait with timeout until SDO goes high
+    while (!digitalRead(SDO)) {
+        if (millis() > (tMillis + READING_TIMEOUT_MILLIS)) {
+            break;
+        }
+    }
     unsigned int dout = (unsigned int) val1 << 2;
     unsigned int iout = (unsigned int) val2 << 2;
     for (int ii = 10; ii >= 0; ii--) {
