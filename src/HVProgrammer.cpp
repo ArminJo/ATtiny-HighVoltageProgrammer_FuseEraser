@@ -11,6 +11,9 @@
 // Fuse Calc:
 // http://www.engbedded.com/fusecalc/
 
+// It restores the default fuse settings of the ATtiny.
+// The fuses can then easily be changed with the programmer you use for uploading your program.
+
 // Modified for easy use with Nano board on a breadboard by Armin Joachimsmeyer - 3/2018
 // - Added option to press button instead of sending character to start programming
 // - Improved serial output information
@@ -22,8 +25,6 @@
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
 
-// Pin 13 has an LED connected on most Arduino boards.
-#define LED_PIN 13
 #define START_BUTTON_PIN 6 // connect a button to ground
 
 #define READING_TIMEOUT_MILLIS 300 // for each shiftOut -> effective timeout is 4 times ore more this single timeout
@@ -35,6 +36,7 @@
 #define SDI 3 // Target Data Input
 #define VCC 2 // Target VCC
 
+// Address of the fuses
 #define HFUSE 0x747C
 #define LFUSE 0x646C
 #define EFUSE 0x666E
@@ -54,10 +56,11 @@ void readFuses();
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
+    while (!Serial); //delay for Leonardo
+    // Just to know which program is running on my Arduino
+    Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from " __DATE__));
 
-    Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from  " __DATE__));
-
-    pinMode(LED_PIN, OUTPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
 
     pinMode(VCC, OUTPUT);
     pinMode(RST, OUTPUT);
@@ -66,9 +69,9 @@ void setup() {
     pinMode(SCI, OUTPUT);
     pinMode(SDO, OUTPUT); // Configured as input when in programming mode
     digitalWrite(RST, HIGH); // Level shifter is inverting, this shuts off 12V
-    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(500);
-    digitalWrite(LED_PIN, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
 
     Serial.println("Press button at pin 6 to start process or enter any character to start process...");
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
@@ -80,7 +83,7 @@ void loop() {
         while (Serial.available() > 0) {
             Serial.read();
         }
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);
         pinMode(SDO, OUTPUT); // Set SDO to output
         digitalWrite(SDI, LOW);
         digitalWrite(SII, LOW);
@@ -146,13 +149,16 @@ void loop() {
 
         Serial.println("");
         delay(1000);
-        digitalWrite(LED_PIN, LOW);
+        digitalWrite(LED_BUILTIN, LOW);
         delay(1000);
+        /*
+         * Blink forever after end of programming
+         */
         while (true) {
             delay(150);
-            digitalWrite(LED_PIN, HIGH);
+            digitalWrite(LED_BUILTIN, HIGH);
             delay(50);
-            digitalWrite(LED_PIN, LOW);
+            digitalWrite(LED_BUILTIN, LOW);
         }
     }
 }
