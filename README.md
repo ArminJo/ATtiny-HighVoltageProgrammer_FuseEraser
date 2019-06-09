@@ -17,9 +17,12 @@ Just copy the **[content](https://raw.githubusercontent.com/ArminJo/ATtiny-HighV
 
 In the **Arduino serial monitor** with baudrate **115200** you will see something like:
 ```
-START C:\...\ArduinoSketches\sketch_feb09a\sketch_feb09a.ino
-Version 2.2 from Feb  9 2019
-Press button at pin 6 to start process or enter any character to start process...
+START C:\...\ArduinoSketches\sketch_jun09a\sketch_jun09a.ino
+Version 3.0 from Jun  9 2019
+
+Enter 'r' to only read fuses...
+Enter 'e' to erase flash and lock bits...
+Enter any other character Or press button at pin 6 to to write fuses to default...
 ```
 
 and **after button press or sending a character** you see
@@ -41,3 +44,9 @@ Breadboard top view
 ![Breadboard_Top](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/media/HVProgrammer_Top.jpg)
 Breadboard back view
 ![Breadboard_Back](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/media/HVProgrammer_Back.jpg)
+
+# Revision History
+### Version 3.0
+- Added erase and raed only commands
+### Version 2.2
+- First public version

@@ -20,7 +20,7 @@
 // - After programming the internal LED blinks
 // - Added timeout for reading data
 
-#define VERSION "2.2"
+#define VERSION "3.0"
 
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
@@ -50,13 +50,15 @@
 #define ATTINY84 0x930C // L: 0x62, H: 0xDF, E: 0xFFF 14 pin
 #define ATTINY85 0x930B // L: 0x62, H: 0xDF, E: 0xFF 8 pin
 
-unsigned int readSignature();
-void writeFuse(unsigned int fuse, byte val);
+uint16_t readSignature();
+void writeFuse(uint16_t aFuseAddress, uint8_t aFuseValue);
 void readFuses();
+void eraseFlashAndLockBits();
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
-    while (!Serial); //delay for Leonardo
+    while (!Serial)
+        ; //delay for Leonardo
     // Just to know which program is running on my Arduino
     Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from " __DATE__));
 
@@ -73,16 +75,30 @@ void setup() {
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Serial.println("Press button at pin 6 to start process or enter any character to start process...");
+    Serial.println();
+    Serial.println("Enter 'r' to only read fuses...");
+    Serial.println("Enter 'e' to erase flash and lock bits...");
+    Serial.println("Enter any other character or press button at pin 6 to to write fuses to default...");
+    Serial.println();
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
 }
 
 void loop() {
+    /*
+     * Wait until button pressed or serial available
+     */
+    char tReceivedChar = 0; // Default value taken, if button pressed
     if (!digitalRead(START_BUTTON_PIN) || Serial.available() > 0) {
-        delay(100); // debouncing wait for serial buffer to be filled (eg. with CR/LF)
+        // read command
+        tReceivedChar = Serial.read();
+
+        // wait for serial buffer to receive CR/LF and consume it
+        delay(100);
         while (Serial.available() > 0) {
             Serial.read();
         }
+
+        // signal start of programming
         digitalWrite(LED_BUILTIN, HIGH);
         pinMode(SDO, OUTPUT); // Set SDO to output
         digitalWrite(SDI, LOW);
@@ -96,58 +112,72 @@ void loop() {
         pinMode(SDO, INPUT); // Set SDO to input
         delayMicroseconds(300);
         Serial.println("Reading signature from connected ATtiny...");
-        unsigned int sig = readSignature();
+        uint16_t tSignature = readSignature();
         Serial.println("Reading complete..");
         Serial.print("Signature is: ");
-        Serial.println(sig, HEX);
+        Serial.println(tSignature, HEX);
+
         readFuses();
-        if (sig == ATTINY13) {
+
+        if (tReceivedChar == 'e' || tReceivedChar == 'E') {
+            eraseFlashAndLockBits();
+        }
+
+        if (tSignature == ATTINY13) {
 
             Serial.println("The ATtiny is detected as ATtiny13/ATtiny13A.");
-            Serial.println("Write LFUSE: 0x6A");
-            writeFuse(LFUSE, 0x6A);
-            Serial.println("Write HFUSE: 0xFF");
-            writeFuse(HFUSE, 0xFF);
-            Serial.println("");
-        } else if (sig == ATTINY24 || sig == ATTINY44 || sig == ATTINY84 || sig == ATTINY25 || sig == ATTINY45 || sig == ATTINY85) {
+            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'r' && tReceivedChar != 'R') {
+                Serial.println("Write LFUSE: 0x6A");
+                writeFuse(LFUSE, 0x6A);
+                Serial.println("Write HFUSE: 0xFF");
+                writeFuse(HFUSE, 0xFF);
+                Serial.println("");
+            }
+        } else if (tSignature == ATTINY24 || tSignature == ATTINY44 || tSignature == ATTINY84 || tSignature == ATTINY25
+                || tSignature == ATTINY45 || tSignature == ATTINY85) {
 
             Serial.print("The ATtiny is detected as ");
-            if (sig == ATTINY24)
+            if (tSignature == ATTINY24)
                 Serial.println("ATTINY24.");
-            else if (sig == ATTINY44)
+            else if (tSignature == ATTINY44)
                 Serial.println("ATTINY44.");
-            else if (sig == ATTINY84)
+            else if (tSignature == ATTINY84)
                 Serial.println("ATTINY84.");
-            else if (sig == ATTINY25)
+            else if (tSignature == ATTINY25)
                 Serial.println("ATTINY25.");
-            else if (sig == ATTINY45)
+            else if (tSignature == ATTINY45)
                 Serial.println("ATTINY45.");
-            else if (sig == ATTINY85)
+            else if (tSignature == ATTINY85)
                 Serial.println("ATTINY85.");
 
-            Serial.println("Write LFUSE: 0x62");
-            writeFuse(LFUSE, 0x62);
-            Serial.println("Write HFUSE: 0xDF");
-            writeFuse(HFUSE, 0xDF);
-            Serial.println("Write EFUSE: 0xFF");
-            writeFuse(EFUSE, 0xFF);
+            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'r' && tReceivedChar != 'R') {
+                Serial.println("Write LFUSE: 0x62");
+                writeFuse(LFUSE, 0x62);
+                Serial.println("Write HFUSE: 0xDF");
+                writeFuse(HFUSE, 0xDF);
+                Serial.println("Write EFUSE: 0xFF");
+                writeFuse(EFUSE, 0xFF);
+            }
         } else {
             //Wait for button to release
             while (!digitalRead(START_BUTTON_PIN))
                 ;
             delay(100); // debouncing
             Serial.println("No valid ATtiny signature detected! Try again.");
+            Serial.println();
             // try again
             return;
         }
+        if (tReceivedChar != 'r' && tReceivedChar != 'R') {
+            Serial.println("Fuses will be read again to check if it's changed successfully...");
+            readFuses();
+        }
 
-        Serial.println("Fuses will be read again to check if it's changed successfully...");
-        readFuses();
         digitalWrite(SCI, LOW);
         digitalWrite(VCC, LOW); // Vcc Off
         digitalWrite(RST, HIGH); // 12v Off
 
-        Serial.println("");
+        Serial.println();
         delay(1000);
         digitalWrite(LED_BUILTIN, LOW);
         delay(1000);
@@ -163,38 +193,58 @@ void loop() {
     }
 }
 
-byte shiftOut(byte val1, byte val2) {
-    int inBits = 0;
-    uint32_t tMillis = millis();
+uint8_t shiftOut(uint8_t aValue, uint8_t aAddress) {
+    uint16_t tInBits = 0;
+
     //Wait with timeout until SDO goes high
+    uint32_t tMillis = millis();
     while (!digitalRead(SDO)) {
         if (millis() > (tMillis + READING_TIMEOUT_MILLIS)) {
             break;
         }
     }
-    unsigned int dout = (unsigned int) val1 << 2;
-    unsigned int iout = (unsigned int) val2 << 2;
-    for (int ii = 10; ii >= 0; ii--) {
-        digitalWrite(SDI, !!(dout & (1 << ii)));
-        digitalWrite(SII, !!(iout & (1 << ii)));
-        inBits <<= 1;
-        inBits |= digitalRead(SDO);
+    uint16_t tSDIOut = (uint16_t) aValue << 2;
+    uint16_t tSIIOut = (uint16_t) aAddress << 2;
+    for (int8_t i = 10; i >= 0; i--) {
+        digitalWrite(SDI, !!(tSDIOut & (1 << i)));
+        digitalWrite(SII, !!(tSIIOut & (1 << i)));
+        tInBits <<= 1;
+        tInBits |= digitalRead(SDO);
         digitalWrite(SCI, HIGH);
         digitalWrite(SCI, LOW);
     }
-    return inBits >> 2;
+    return tInBits >> 2;
+    Serial.print(" tInBits=");
+    Serial.println(tInBits);
+
 }
 
-void writeFuse(unsigned int fuse, byte val) {
+void eraseFlashAndLockBits() {
+
+    Serial.println("Erasing flash and lock bits...");
+    shiftOut(0x80, 0x4C);
+    shiftOut(0x00, 0x64);
+    shiftOut(0x00, 0x6C);
+
+    //Wait with timeout until SDO goes high
+    uint32_t tMillis = millis();
+    while (!digitalRead(SDO)) {
+        if (millis() > (tMillis + READING_TIMEOUT_MILLIS)) {
+            break;
+        }
+    }
+}
+
+void writeFuse(uint16_t aFuseAddress, uint8_t aFuseValue) {
 
     Serial.print("Writing fuse value ");
-    Serial.print(val, HEX);
+    Serial.print(aFuseValue, HEX);
     Serial.println(" to ATtiny...");
 
     shiftOut(0x40, 0x4C);
-    shiftOut(val, 0x2C);
-    shiftOut(0x00, (byte) (fuse >> 8));
-    shiftOut(0x00, (byte) fuse);
+    shiftOut(aFuseValue, 0x2C);
+    shiftOut(0x00, (uint8_t) (aFuseAddress >> 8));
+    shiftOut(0x00, (uint8_t) aFuseAddress);
 
     Serial.println("Writing complete.");
 }
@@ -203,34 +253,37 @@ void readFuses() {
 
     Serial.println("Reading fuse settings from ATtiny...");
 
-    byte val;
+    uint8_t tValue;
     shiftOut(0x04, 0x4C); // LFuse
     shiftOut(0x00, 0x68);
-    val = shiftOut(0x00, 0x6C);
+    tValue = shiftOut(0x00, 0x6C);
     Serial.print("LFuse: ");
-    Serial.print(val, HEX);
+    Serial.print(tValue, HEX);
+
     shiftOut(0x04, 0x4C); // HFuse
     shiftOut(0x00, 0x7A);
-    val = shiftOut(0x00, 0x7E);
+    tValue = shiftOut(0x00, 0x7E);
     Serial.print(", HFuse: ");
-    Serial.print(val, HEX);
+    Serial.print(tValue, HEX);
+
     shiftOut(0x04, 0x4C); // EFuse
     shiftOut(0x00, 0x6A);
-    val = shiftOut(0x00, 0x6E);
+    tValue = shiftOut(0x00, 0x6E);
     Serial.print(", EFuse: ");
-    Serial.println(val, HEX);
+    Serial.println(tValue, HEX);
     Serial.println("Reading complete.");
 }
 
-unsigned int readSignature() {
-    unsigned int sig = 0;
-    byte val;
-    for (int ii = 1; ii < 3; ii++) {
+uint16_t readSignature() {
+    uint16_t tSignature = 0;
+    uint8_t tValue;
+    for (uint8_t tIndex = 1; tIndex < 3; tIndex++) {
         shiftOut(0x08, 0x4C);
-        shiftOut(ii, 0x0C);
+        shiftOut(tIndex, 0x0C);
         shiftOut(0x00, 0x68);
-        val = shiftOut(0x00, 0x6C);
-        sig = (sig << 8) + val;
+        tValue = shiftOut(0x00, 0x6C);
+        tSignature = (tSignature << 8) + tValue;
     }
-    return sig;
+
+    return tSignature;
 }
