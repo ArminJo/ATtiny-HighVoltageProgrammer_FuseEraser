@@ -20,7 +20,13 @@
 // - After programming the internal LED blinks
 // - Added timeout for reading data
 
-#define VERSION "2.2"
+//Modified to add chip erase ablity
+// - added option selection via character entry
+// - 'f' -> write fuses to defaults
+// - 'e' -> chip erase
+// - any other character -> just read fuses
+
+#define VERSION "2.3"
 
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
@@ -73,15 +79,21 @@ void setup() {
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
 
+    Serial.println("Enter 'f' to write fuses to defaults...");
+    Serial.println("Enter 'e' to erase flash and lock bits...");
+    Serial.println("Enter any other character to read fuses...");
+    Serial.println("Or...");
     Serial.println("Press button at pin 6 to start process or enter any character to start process...");
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
+    
 }
 
 void loop() {
+    char inst;
     if (!digitalRead(START_BUTTON_PIN) || Serial.available() > 0) {
         delay(100); // debouncing wait for serial buffer to be filled (eg. with CR/LF)
         while (Serial.available() > 0) {
-            Serial.read();
+            inst = Serial.read();
         }
         digitalWrite(LED_BUILTIN, HIGH);
         pinMode(SDO, OUTPUT); // Set SDO to output
@@ -104,11 +116,16 @@ void loop() {
         if (sig == ATTINY13) {
 
             Serial.println("The ATtiny is detected as ATtiny13/ATtiny13A.");
-            Serial.println("Write LFUSE: 0x6A");
-            writeFuse(LFUSE, 0x6A);
-            Serial.println("Write HFUSE: 0xFF");
-            writeFuse(HFUSE, 0xFF);
-            Serial.println("");
+            if (inst == 'f')    {
+                Serial.println("Write LFUSE: 0x6A");
+                writeFuse(LFUSE, 0x6A);
+                Serial.println("Write HFUSE: 0xFF");
+                writeFuse(HFUSE, 0xFF);
+                Serial.println("");
+            }
+            else if (inst =='e')  {
+                chip_erase();           //erase flash and lock bits
+            }
         } else if (sig == ATTINY24 || sig == ATTINY44 || sig == ATTINY84 || sig == ATTINY25 || sig == ATTINY45 || sig == ATTINY85) {
 
             Serial.print("The ATtiny is detected as ");
@@ -124,13 +141,17 @@ void loop() {
                 Serial.println("ATTINY45.");
             else if (sig == ATTINY85)
                 Serial.println("ATTINY85.");
-
-            Serial.println("Write LFUSE: 0x62");
-            writeFuse(LFUSE, 0x62);
-            Serial.println("Write HFUSE: 0xDF");
-            writeFuse(HFUSE, 0xDF);
-            Serial.println("Write EFUSE: 0xFF");
-            writeFuse(EFUSE, 0xFF);
+            if (inst == 'f')    {
+                Serial.println("Write LFUSE: 0x62");
+                writeFuse(LFUSE, 0x62);
+                Serial.println("Write HFUSE: 0xDF");
+                writeFuse(HFUSE, 0xDF);
+                Serial.println("Write EFUSE: 0xFF");
+                writeFuse(EFUSE, 0xFF);
+            }
+            else if (inst == 'e')   {           //erase flash and lock bits
+                chip_erase();   
+            }
         } else {
             //Wait for button to release
             while (!digitalRead(START_BUTTON_PIN))
@@ -184,6 +205,17 @@ byte shiftOut(byte val1, byte val2) {
     }
     return inBits >> 2;
 }
+
+void chip_erase () {
+
+    Serial.println("Erasing Flash and Lock Bits...");
+
+    shiftOut(0x80, 0x4C); 
+    shiftOut(0x00, 0x64);
+    shiftOut(0x00, 0x6C);
+
+    while (!digitalRead(SDO));   //wait until chip erase completes (wait until SDO goes high)
+ }
 
 void writeFuse(unsigned int fuse, byte val) {
 
