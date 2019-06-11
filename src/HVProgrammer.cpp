@@ -1,6 +1,5 @@
 /*
  *  HVProgrammer.cpp
- *
  */
 
 #include <Arduino.h>
@@ -20,7 +19,7 @@
 // - After programming the internal LED blinks
 // - Added timeout for reading data
 
-#define VERSION "3.0"
+#define VERSION "3.1"
 
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
@@ -75,22 +74,26 @@ void setup() {
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Serial.println();
-    Serial.println("Enter 'r' to only read fuses...");
-    Serial.println("Enter 'e' to erase flash and lock bits...");
-    Serial.println("Enter any other character or press button at pin 6 to to write fuses to default...");
-    Serial.println();
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
 }
 
 void loop() {
+
+    Serial.println();
+    Serial.println("Enter 'f' to only read fuses...");
+    Serial.println("Enter 'e' to erase flash and lock bits...");
+    Serial.println("Enter 'w' or any other character or press button at pin 6 to to write fuses to default...");
+    Serial.println();
+
     /*
      * Wait until button pressed or serial available
      */
     char tReceivedChar = 0; // Default value taken, if button pressed
     if (!digitalRead(START_BUTTON_PIN) || Serial.available() > 0) {
         // read command
-        tReceivedChar = Serial.read();
+        if (Serial.available() > 0) {
+            tReceivedChar = Serial.read();
+        }
 
         // wait for serial buffer to receive CR/LF and consume it
         delay(100);
@@ -126,7 +129,7 @@ void loop() {
         if (tSignature == ATTINY13) {
 
             Serial.println("The ATtiny is detected as ATtiny13/ATtiny13A.");
-            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'r' && tReceivedChar != 'R') {
+            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'f' && tReceivedChar != 'F') {
                 Serial.println("Write LFUSE: 0x6A");
                 writeFuse(LFUSE, 0x6A);
                 Serial.println("Write HFUSE: 0xFF");
@@ -150,7 +153,7 @@ void loop() {
             else if (tSignature == ATTINY85)
                 Serial.println("ATTINY85.");
 
-            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'r' && tReceivedChar != 'R') {
+            if (tReceivedChar != 'e' && tReceivedChar != 'E' && tReceivedChar != 'f' && tReceivedChar != 'F') {
                 Serial.println("Write LFUSE: 0x62");
                 writeFuse(LFUSE, 0x62);
                 Serial.println("Write HFUSE: 0xDF");
@@ -181,14 +184,23 @@ void loop() {
         delay(1000);
         digitalWrite(LED_BUILTIN, LOW);
         delay(1000);
+
         /*
-         * Blink forever after end of programming
+         * If controlled by serial input enable a new run, otherwise blink forever
          */
-        while (true) {
-            delay(150);
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(50);
-            digitalWrite(LED_BUILTIN, LOW);
+        if (tReceivedChar == 0) {
+            /*
+             * Blink forever after end of programming triggered by button
+             */
+            while (true) {
+                delay(150);
+                digitalWrite(LED_BUILTIN, HIGH);
+                delay(50);
+                digitalWrite(LED_BUILTIN, LOW);
+            }
+        } else {
+            Serial.println();
+            Serial.println("Programming finished, allow a new run.");
         }
     }
 }
