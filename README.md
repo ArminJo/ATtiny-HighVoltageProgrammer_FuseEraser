@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Based on [Recover Bricked ATtiny Using Arduino as high voltage programmer](http://www.electronics-lab.com/recover-bricked-attiny-using-arduino-as-high-voltage-programmer/)
-This program restores the default fuse settings of the ATtiny. 
+This program restores the default fuse settings of the ATtiny and can perform a chip erase & lock bits reset. 
 The fuses can then easily be changed with the programmer you use for uploading your program.
 
 ### Modified for easy use with Nano board on a breadboard
@@ -11,29 +11,70 @@ The fuses can then easily be changed with the programmer you use for uploading y
 - Improved serial output information
 - After programming the internal LED blinks
 - Added timeout for reading data
+- Allow Serial command input
+- Added readout of lockbits
+- Added Chip Erase 
 
 # Installation
 Just copy the **[content](https://raw.githubusercontent.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/master/src/HVProgrammer.cpp)** of the HVProgrammer.cpp file into a **new Arduino sketch** and run it.
 
 In the **Arduino serial monitor** with baudrate **115200** you will see something like:
 ```
-START C:\...\ArduinoSketches\sketch_jun09a\sketch_jun09a.ino
-Version 3.0 from Jun  9 2019
+START C:\...\ArduinoSketches\sketch_jun15a\sketch_jun15a.ino
+Version 3.2 from Jun 15 2019
 
-Enter 'r' to only read fuses...
+Enter 'r' to only read fuses and lock bits...
 Enter 'e' to erase flash and lock bits...
-Enter any other character Or press button at pin 6 to to write fuses to default...
+Enter 'w' or any other character or press button at pin 6 to to write fuses to default...
 ```
 
 and **after button press or sending a character** you see
 ```
 Reading signature from connected ATtiny...
-Reading complete..
-Signature is: 6C6C
+Signature is: 930B
+Reading signature complete..
+
+The ATtiny is detected as ATtiny85.
+
 Reading fuse settings from ATtiny...
-LFuse: 6C, HFuse: 7E, EFuse: 7F
-Reading complete.
-No valid ATtiny signature detected! Try again.
+  LFuse: 62, HFuse: DF, EFuse: FF
+Reading fuse values complete.
+
+Reading lock bits...
+  Lock: FF
+    LB1 Not Programmed
+    LB2 Not Programmed
+No memory lock features enabled.
+Reading Lock Bits complete.
+
+Write LFUSE: 0x62
+Writing fuse value 62 to ATtiny...
+Writing complete.
+
+Write HFUSE: 0xDF
+Writing fuse value DF to ATtiny...
+Writing complete.
+
+Write EFUSE: 0xFF
+Writing fuse value FF to ATtiny...
+Writing complete.
+
+Fuses will be read again to check values...
+Reading fuse settings from ATtiny...
+  LFuse: 62, HFuse: DF, EFuse: FF
+Reading fuse values complete.
+
+Reading / programming finished, allow a new run.
+
+```
+for an **ATtiny85** or
+```
+Reading signature from connected ATtiny...
+Signature is: 0
+Reading signature complete..
+
+No valid ATtiny signature detected!
+Try again.
 ```
 if **no ATtiny** is attached.
 
@@ -46,7 +87,9 @@ Breadboard back view
 ![Breadboard_Back](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/media/HVProgrammer_Back.jpg)
 
 # Revision History
+### Version 3.2
+- Added lock bit readout
 ### Version 3.0
-- Added erase and raed only commands
+- Added erase and read only commands
 ### Version 2.2
 - First public version
