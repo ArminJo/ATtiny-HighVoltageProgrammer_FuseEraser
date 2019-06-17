@@ -75,7 +75,7 @@ uint8_t checkAndPrintSignature(uint16_t aSignature);
 void writeFuse(uint16_t aFuseAddress, uint8_t aFuseValue);
 void readFuses();
 void eraseFlashAndLockBits();
-void readLockBits();
+bool readLockBits();
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
@@ -150,9 +150,13 @@ void loop() {
 
     if (tDeviceType != DEVICE_UNKNOWN) {
         readFuses();
-        readLockBits();
+        bool tFusesAreLocked = readLockBits();
+        if (tFusesAreLocked && tReceivedChar != 'r' && tReceivedChar != 'R') {
+            // should write fuses, but they are locked
+            Serial.println("Suppose to write fuses, but they are locked. -> Unlock them by performing an additional chip erase.");
+        }
 
-        if (tReceivedChar == 'e' || tReceivedChar == 'E') {
+        if (tFusesAreLocked || tReceivedChar == 'e' || tReceivedChar == 'E') {
             /*
              * ERASE
              */
@@ -190,12 +194,17 @@ void loop() {
 
     /*
      * End of programming / reading
-     * Wait for button to release and switch power off
+     * Wait for button to release if pressed and switch power off
      */
-    while (!digitalRead(START_BUTTON_PIN)) {
-        delay(1);
+    if (tReceivedChar == 0) {
+        /*
+         * Wait for button to release, if pressed before
+         */
+        while (!digitalRead(START_BUTTON_PIN)) {
+            delay(1);
+        }
+        delay(100); // button debouncing
     }
-    delay(100); // button debouncing
 
     /*
      * Switch off VCC and 12 Volt
@@ -381,7 +390,12 @@ uint16_t readSignature() {
     return tSignature;
 }
 
-void readLockBits() {
+/*
+ * Returns true if fuses are locked
+ */
+bool readLockBits() {
+
+    bool tReturnValue = false;
     Serial.println("Reading lock bits...");
     uint8_t tValue;
     shiftOut(0x04, 0x4C); // Lock
@@ -390,6 +404,9 @@ void readLockBits() {
     Serial.print("  Lock: ");
     Serial.println(tValue, HEX);
     Serial.print("    ");
+
+    // Mask lock bits
+    tValue &= 0x03;
 
 //check and report LB1 and LB2 state
 //0 is programmed
@@ -405,14 +422,17 @@ void readLockBits() {
         Serial.println("    LB2 Programmed");
     }
 
-    tValue &= 0x03;
-    if (tValue & 0x03) {
+    if (tValue == 0x03) {
         Serial.println("No memory lock features enabled.");
-    } else if ((tValue & 0x01) == 0) {
-        Serial.println("Further programming of the Flash and EEPROM is disabled in High-voltage and Serial Programming mode.");
-        Serial.println("The Fuse bits are locked in both Serial and High-voltage Programming mode. debugWire is disabled.");
-    } else if ((tValue == 0x02) == 0) {
-        Serial.println("Additionally verification is also disabled in High-voltage and Serial Programming mode.");
+    } else {
+        if (!(tValue & 0x01)) {
+            Serial.println("Further programming of the Flash and EEPROM is disabled in High-voltage and Serial Programming mode.");
+            Serial.println("The Fuse bits are locked in both Serial and High-voltage Programming mode. debugWire is disabled.");
+            tReturnValue = true;
+        }
+        if (!(tValue & 0x02)) {
+            Serial.println("Additionally verification is also disabled in High-voltage and Serial Programming mode.");
+        }
     }
 //Wait with timeout until SDO goes high
     uint32_t tMillis = millis();
@@ -425,4 +445,5 @@ void readLockBits() {
     Serial.println("Reading Lock Bits complete.");
     Serial.println();
 
+    return tReturnValue;
 }
