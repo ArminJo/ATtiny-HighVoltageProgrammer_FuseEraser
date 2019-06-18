@@ -24,7 +24,7 @@
 // - read and report lock bits status
 // - device memory erase to restore lock bits to their default unlocked state
 
-#define VERSION "3.2"
+#define VERSION "3.3"
 
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
@@ -104,9 +104,10 @@ void loop() {
 
     Serial.println();
     Serial.println();
-    Serial.println("Enter 'r' to only read fuses and lock bits...");
-    Serial.println("Enter 'e' to erase flash and lock bits...");
-    Serial.println("Enter 'w' or any other character or press button at pin 6 to to write fuses to default...");
+    Serial.println("Enter 'r' to only read fuses and lock bits.");
+    Serial.println("Enter 'e' to erase flash and reset lock bits.");
+    Serial.println("Enter 'w' or any other character or press button at pin 6 to to write fuses to default.");
+    Serial.println("  !!! 'w' will erase flash if lock bits are set, since otherwise fuses can not be overwritten!!!");
     Serial.println();
 
     /*
@@ -221,21 +222,21 @@ void loop() {
         Serial.println("Try again.");
     } else {
         /*
-         * If controlled by serial input, enable a new run, otherwise blink forever
+         * If controlled by serial input, enable a new run, otherwise blink for a while
          */
         if (tReceivedChar == 0) {
             /*
-             * Blink forever after end of programming triggered by button
+             * Blink 10 seconds after end of programming triggered by button
              */
-            while (true) {
+            Serial.println("Blink for 10 seconds to signal that button requested operation is done.");
+            for (int i = 0; i < 50; ++i) {
                 delay(150);
                 digitalWrite(LED_BUILTIN, HIGH);
                 delay(50);
                 digitalWrite(LED_BUILTIN, LOW);
             }
-        } else {
-            Serial.println("Reading / programming finished, allow a new run.");
         }
+        Serial.println("Reading / programming finished, allow a new run.");
     }
 }
 
