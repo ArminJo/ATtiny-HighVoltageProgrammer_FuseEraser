@@ -61,9 +61,9 @@
 #define ATTINY13 0x9007 // L: 0x6A, H: 0xFF 8 pin
 #define ATTINY24 0x910B // L: 0x62, H: 0xDF, E: 0xFF 14 pin
 #define ATTINY25 0x9108 // L: 0x62, H: 0xDF, E: 0xFF 8 pin
-#define ATTINY44 0x9207 // L: 0x62, H: 0xDF, E: 0xFFF 14 pin
+#define ATTINY44 0x9207 // L: 0x62, H: 0xDF, E: 0xFF 14 pin
 #define ATTINY45 0x9206 // L: 0x62, H: 0xDF, E: 0xFF 8 pin
-#define ATTINY84 0x930C // L: 0x62, H: 0xDF, E: 0xFFF 14 pin
+#define ATTINY84 0x930C // L: 0x62, H: 0xDF, E: 0xFF 14 pin
 #define ATTINY85 0x930B // L: 0x62, H: 0xDF, E: 0xFF 8 pin
 
 #define DEVICE_UNKNOWN 0
@@ -92,7 +92,7 @@ void setup() {
     pinMode(SII, OUTPUT);
     pinMode(SCI, OUTPUT);
     pinMode(SDO, OUTPUT); // Configured as input when in programming mode
-    digitalWrite(RST, HIGH); // Level shifter is inverting, this shuts off 12V
+    digitalWrite(RST, HIGH); // Level shifter is inverting, this shuts off 12 volt
     digitalWrite(LED_BUILTIN, HIGH);
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
@@ -135,12 +135,12 @@ void loop() {
     digitalWrite(SII, LOW);
     digitalWrite(SDO, LOW);
     /*
-     * Switch on VCC and 12 Volt
+     * Switch on VCC and 12 volt
      */
-    digitalWrite(RST, HIGH); // 12v Off
+    digitalWrite(RST, HIGH); // 12 V Off
     digitalWrite(VCC, HIGH); // Vcc On
     delayMicroseconds(20);
-    digitalWrite(RST, LOW); // 12v On
+    digitalWrite(RST, LOW); // 12 V On
     delayMicroseconds(10);
 
     pinMode(SDO, INPUT); // Set SDO to input
@@ -208,7 +208,7 @@ void loop() {
     }
 
     /*
-     * Switch off VCC and 12 Volt
+     * Switch off VCC and 12 volt
      */
     digitalWrite(SCI, LOW);
     digitalWrite(VCC, LOW); // Vcc Off
