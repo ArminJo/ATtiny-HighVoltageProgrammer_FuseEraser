@@ -4,8 +4,9 @@
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FATtiny-HighVoltageProgrammer_FuseEraser)](https://github.com/brentvollebregt/hit-counter)
 
 Based on [Recover Bricked ATtiny Using Arduino as high voltage programmer](http://www.electronics-lab.com/recover-bricked-attiny-using-arduino-as-high-voltage-programmer/)
-This program restores the default fuse settings of the ATtiny and can perform a chip erase & lock bits reset. 
-The fuses can then easily be changed with the programmer you use for uploading your program.
+This program restores the default fuse settings of the ATtiny and can perform a chip erase & lock bits reset.<br/>
+After resetting, the fuses can then easily be changed with the programmer you use for uploading your program e.e. avrdude.<br/>
+To burn micronucleus bootloader on an empty chip use the `Burn_avrdude-*` scripts available [here](https://github.com/ArminJo/micronucleus-firmware/tree/master/utils).
 
 ### Modified for easy use with Nano board on a breadboard
 - Added option to press button instead of sending character to start programming
@@ -17,7 +18,7 @@ The fuses can then easily be changed with the programmer you use for uploading y
 - Added Chip Erase 
 
 # Installation
-Just copy the **[content](https://raw.githubusercontent.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/master/src/HVProgrammer.cpp)** of the HVProgrammer.cpp file into a **new Arduino sketch** and run it.
+Just copy the **[content](https://raw.githubusercontent.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/master/src/HVProgrammer.cpp)** of the HVProgrammer.ino file into a **new Arduino sketch** and run it.
 
 In the **Arduino serial monitor** with baudrate **115200** you will see something like:
 ```
@@ -29,7 +30,7 @@ Enter 'e' to erase flash and lock bits...
 Enter 'w' or any other character or press button at pin 6 to to write fuses to default...
 ```
 
-and **after button press or sending a character** you see
+and **after button press or sending a character** you see for an **ATtiny85**:
 ```
 Reading signature from connected ATtiny...
 Signature is: 930B
@@ -68,7 +69,7 @@ Reading fuse values complete.
 Reading / programming finished, allow a new run.
 
 ```
-for an **ATtiny85** or
+ or if **no ATtiny** is attached:
 ```
 Reading signature from connected ATtiny...
 Signature is: 0
@@ -77,15 +78,14 @@ Reading signature complete..
 No valid ATtiny signature detected!
 Try again.
 ```
-if **no ATtiny** is attached.
 
 # Breadboard
 This circuit uses an Arduino nano and an [ebay DC-DC Step-Up Modul](https://www.ebay.de/itm/2PCS-2A-Booster-Board-DC-DC-Step-Up-Modul-2-24V-5-9-12-28V-Replace-XL6009-BAF-/263413727169?hash=item3d54ae7fc1)
 
 Breadboard top view
-![Breadboard_Top](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/media/HVProgrammer_Top.jpg)
+![Breadboard_Top](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/pictures/HVProgrammer_Top.jpg)
 Breadboard back view
-![Breadboard_Back](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/media/HVProgrammer_Back.jpg)
+![Breadboard_Back](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/pictures/HVProgrammer_Back.jpg)
 
 # Revision History
 ### Version 3.2
