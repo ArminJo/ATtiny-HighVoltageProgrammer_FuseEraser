@@ -3,9 +3,9 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FATtiny-HighVoltageProgrammer_FuseEraser)](https://github.com/brentvollebregt/hit-counter)
 
-Based on [Recover Bricked ATtiny Using Arduino as high voltage programmer](http://www.electronics-lab.com/recover-bricked-attiny-using-arduino-as-high-voltage-programmer/)
+Based on [Recover Bricked ATtiny Using Arduino as high voltage programmer](http://www.electronics-lab.com/recover-bricked-attiny-using-arduino-as-high-voltage-programmer/).<br/>
 This program restores the default fuse settings of the ATtiny and can perform a chip erase & lock bits reset.<br/>
-After resetting, the fuses can then easily be changed with the programmer you use for uploading your program e.e. avrdude.<br/>
+After resetting, the fuses can then easily be changed with the programmer you use for uploading your program i.e. avrdude.<br/>
 To burn micronucleus bootloader on an empty chip use the `Burn_avrdude-*` scripts available [here](https://github.com/ArminJo/micronucleus-firmware/tree/master/utils).
 
 ### Modified for easy use with Nano board on a breadboard
