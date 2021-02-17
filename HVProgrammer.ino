@@ -25,7 +25,7 @@
 // - read and report lock bits status
 // - device memory erase to restore lock bits to their default unlocked state
 
-#define VERSION "3.3"
+#define VERSION "3.4"
 
 //#define SERIAL_BAUDRATE 19200
 #define SERIAL_BAUDRATE 115200
@@ -80,12 +80,13 @@ bool readLockBits();
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
-#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL)
-    delay(2000); // To be able to connect Serial monitor after reset and before first printout
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL) || defined(ARDUINO_attiny3217)
+    delay(2000); // To be able to connect Serial monitor after reset or power up and before first printout
 #endif
     // Just to know which program is running on my Arduino
     Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from " __DATE__));
 
+    delay(200);
     pinMode(LED_BUILTIN, OUTPUT);
 
     pinMode(VCC, OUTPUT);
@@ -106,10 +107,10 @@ void loop() {
 
     Serial.println();
     Serial.println();
-    Serial.println("Enter 'r' to only read fuses and lock bits.");
-    Serial.println("Enter 'e' to erase flash and reset lock bits.");
-    Serial.println("Enter 'w' or any other character or press button at pin 6 to to write fuses to default.");
-    Serial.println("  !!! 'w' will erase flash if lock bits are set, since otherwise fuses can not be overwritten!!!");
+    Serial.println(F("Enter 'r' to only read fuses and lock bits."));
+    Serial.println(F("Enter 'e' to erase flash and reset lock bits."));
+    Serial.println(F("Enter 'w' or any other character or press button at pin 6 to to write fuses to default."));
+    Serial.println(F("  !!! 'w' will erase flash if lock bits are set, since otherwise fuses can not be overwritten!!!"));
     Serial.println();
 
     /*
@@ -156,7 +157,7 @@ void loop() {
         bool tFusesAreLocked = readLockBits();
         if (tFusesAreLocked && tReceivedChar != 'r' && tReceivedChar != 'R') {
             // should write fuses, but they are locked
-            Serial.println("Suppose to write fuses, but they are locked. -> Unlock them by performing an additional chip erase.");
+            Serial.println(F("Suppose to write fuses, but they are locked. -> Unlock them by performing an additional chip erase."));
         }
 
         if (tFusesAreLocked || tReceivedChar == 'e' || tReceivedChar == 'E') {
@@ -169,28 +170,28 @@ void loop() {
              * WRITE FUSES
              */
             if (tDeviceType == DEVICE_ATTINY13) {
-                Serial.println("Write LFUSE: 0x6A");
+                Serial.println(F("Write LFUSE: 0x6A"));
                 writeFuse(LFUSE, 0x6A);
-                Serial.println("Write HFUSE: 0xFF");
+                Serial.println(F("Write HFUSE: 0xFF"));
                 writeFuse(HFUSE, 0xFF);
-                Serial.println("");
+                Serial.println();
 
             } else if (tDeviceType == DEVICE_ATTINY24_TO_85) {
-                Serial.println("Write LFUSE: 0x62");
+                Serial.println(F("Write LFUSE: 0x62"));
                 writeFuse(LFUSE, 0x62);
-                Serial.println("Write HFUSE: 0xDF");
+                Serial.println(F("Write HFUSE: 0xDF"));
                 writeFuse(HFUSE, 0xDF);
-                Serial.println("Write EFUSE: 0xFF");
+                Serial.println(F("Write EFUSE: 0xFF"));
                 writeFuse(EFUSE, 0xFF);
             }
         }
 
         if (tReceivedChar == 'e' || tReceivedChar == 'E') {
-            Serial.println("Lock bits will be read again to check values...");
+            Serial.println(F("Lock bits will be read again to check values..."));
             readLockBits();
         }
         if (tReceivedChar != 'r' && tReceivedChar != 'R') {
-            Serial.println("Fuses will be read again to check values...");
+            Serial.println(F("Fuses will be read again to check values..."));
             readFuses();
         }
     }
@@ -221,7 +222,7 @@ void loop() {
     delay(1000);
 
     if (tDeviceType == DEVICE_UNKNOWN) {
-        Serial.println("Try again.");
+        Serial.println(F("Try again."));
     } else {
         /*
          * If controlled by serial input, enable a new run, otherwise blink for a while
@@ -230,7 +231,7 @@ void loop() {
             /*
              * Blink 10 seconds after end of programming triggered by button
              */
-            Serial.println("Blink for 10 seconds to signal that button requested operation is done.");
+            Serial.println(F("Blink for 10 seconds to signal that button requested operation is done."));
             for (int i = 0; i < 50; ++i) {
                 delay(150);
                 digitalWrite(LED_BUILTIN, HIGH);
@@ -238,7 +239,7 @@ void loop() {
                 digitalWrite(LED_BUILTIN, LOW);
             }
         }
-        Serial.println("Reading / programming finished, allow a new run.");
+        Serial.println(F("Reading / programming finished, allow a new run."));
     }
 }
 
@@ -277,9 +278,9 @@ uint8_t checkAndPrintSignature(uint16_t aSignature) {
         break;
     }
     if (tReturnValue == DEVICE_UNKNOWN) {
-        Serial.println("No valid ATtiny signature detected!");
+        Serial.println(F("No valid ATtiny signature detected!"));
     } else {
-        Serial.print("The ATtiny is detected as ATtiny");
+        Serial.print(F("The ATtiny is detected as ATtiny"));
         Serial.println(tTypeString);
         Serial.println();
     }
@@ -307,14 +308,14 @@ uint8_t shiftOut(uint8_t aValue, uint8_t aAddress) {
         digitalWrite(SCI, LOW);
     }
     return tInBits >> 2;
-    Serial.print(" tInBits=");
+    Serial.print(F(" tInBits="));
     Serial.println(tInBits);
 
 }
 
 void eraseFlashAndLockBits() {
 
-    Serial.println("Erasing flash and lock bits...");
+    Serial.println(F("Erasing flash and lock bits..."));
     shiftOut(0x80, 0x4C);
     shiftOut(0x00, 0x64);
     shiftOut(0x00, 0x6C);
@@ -326,56 +327,56 @@ void eraseFlashAndLockBits() {
             break;
         }
     }
-    Serial.println("Erasing complete.");
+    Serial.println(F("Erasing complete."));
     Serial.println();
 
 }
 
 void writeFuse(uint16_t aFuseAddress, uint8_t aFuseValue) {
 
-    Serial.print("Writing fuse value ");
+    Serial.print(F("Writing fuse value "));
     Serial.print(aFuseValue, HEX);
-    Serial.println(" to ATtiny...");
+    Serial.println(F(" to ATtiny..."));
 
     shiftOut(0x40, 0x4C);
     shiftOut(aFuseValue, 0x2C);
     shiftOut(0x00, (uint8_t) (aFuseAddress >> 8));
     shiftOut(0x00, (uint8_t) aFuseAddress);
 
-    Serial.println("Writing complete.");
+    Serial.println(F("Writing complete."));
     Serial.println();
 
 }
 
 void readFuses() {
 
-    Serial.println("Reading fuse settings from ATtiny...");
+    Serial.println(F("Reading fuse settings from ATtiny..."));
 
     uint8_t tValue;
     shiftOut(0x04, 0x4C); // LFuse
     shiftOut(0x00, 0x68);
     tValue = shiftOut(0x00, 0x6C);
-    Serial.print("  LFuse: ");
+    Serial.print(F("  LFuse: "));
     Serial.print(tValue, HEX);
 
     shiftOut(0x04, 0x4C); // HFuse
     shiftOut(0x00, 0x7A);
     tValue = shiftOut(0x00, 0x7E);
-    Serial.print(", HFuse: ");
+    Serial.print(F(", HFuse: "));
     Serial.print(tValue, HEX);
 
     shiftOut(0x04, 0x4C); // EFuse
     shiftOut(0x00, 0x6A);
     tValue = shiftOut(0x00, 0x6E);
-    Serial.print(", EFuse: ");
+    Serial.print(F(", EFuse: "));
     Serial.println(tValue, HEX);
-    Serial.println("Reading fuse values complete.");
+    Serial.println(F("Reading fuse values complete."));
     Serial.println();
 
 }
 
 uint16_t readSignature() {
-    Serial.println("Reading signature from connected ATtiny...");
+    Serial.println(F("Reading signature from connected ATtiny..."));
     uint16_t tSignature = 0;
     uint8_t tValue;
     for (uint8_t tIndex = 1; tIndex < 3; tIndex++) {
@@ -385,9 +386,9 @@ uint16_t readSignature() {
         tValue = shiftOut(0x00, 0x6C);
         tSignature = (tSignature << 8) + tValue;
     }
-    Serial.print("Signature is: ");
+    Serial.print(F("Signature is: "));
     Serial.println(tSignature, HEX);
-    Serial.println("Reading signature complete..");
+    Serial.println(F("Reading signature complete.."));
     Serial.println();
 
     return tSignature;
@@ -399,14 +400,14 @@ uint16_t readSignature() {
 bool readLockBits() {
 
     bool tReturnValue = false;
-    Serial.println("Reading lock bits...");
+    Serial.println(F("Reading lock bits..."));
     uint8_t tValue;
     shiftOut(0x04, 0x4C); // Lock
     shiftOut(0x00, 0x78);
     tValue = shiftOut(0x00, 0x7C);
-    Serial.print("  Lock: ");
+    Serial.print(F("  Lock: "));
     Serial.println(tValue, HEX);
-    Serial.print("    ");
+    Serial.print(F("    "));
 
     // Mask lock bits
     tValue &= 0x03;
@@ -415,26 +416,26 @@ bool readLockBits() {
 //0 is programmed
 //tValue: x x x x x x LB2 LB1
     if (tValue & 0x01) {
-        Serial.println("LB1 Not Programmed");
+        Serial.println(F("LB1 Not Programmed"));
     } else {
-        Serial.println("LB1 Programmed");
+        Serial.println(F("LB1 Programmed"));
     }
     if (tValue & 0x02) {
-        Serial.println("    LB2 Not Programmed");
+        Serial.println(F("    LB2 Not Programmed"));
     } else {
-        Serial.println("    LB2 Programmed");
+        Serial.println(F("    LB2 Programmed"));
     }
 
     if (tValue == 0x03) {
-        Serial.println("No memory lock features enabled.");
+        Serial.println(F("No memory lock features enabled."));
     } else {
         if (!(tValue & 0x01)) {
-            Serial.println("Further programming of the Flash and EEPROM is disabled in High-voltage and Serial Programming mode.");
-            Serial.println("The Fuse bits are locked in both Serial and High-voltage Programming mode. debugWire is disabled.");
+            Serial.println(F("Further programming of the Flash and EEPROM is disabled in High-voltage and Serial Programming mode."));
+            Serial.println(F("The Fuse bits are locked in both Serial and High-voltage Programming mode. debugWire is disabled."));
             tReturnValue = true;
         }
         if (!(tValue & 0x02)) {
-            Serial.println("Additionally verification is also disabled in High-voltage and Serial Programming mode.");
+            Serial.println(F("Additionally verification is also disabled in High-voltage and Serial Programming mode."));
         }
     }
 //Wait with timeout until SDO goes high
@@ -445,7 +446,7 @@ bool readLockBits() {
         }
     }
 
-    Serial.println("Reading Lock Bits complete.");
+    Serial.println(F("Reading Lock Bits complete."));
     Serial.println();
 
     return tReturnValue;

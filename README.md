@@ -88,6 +88,11 @@ Breadboard back view
 ![Breadboard_Back](https://github.com/ArminJo/ATtiny-HighVoltageProgrammer_FuseEraser/blob/HEAD/pictures/HVProgrammer_Back.jpg)
 
 # Revision History
+### Version 3.4
+- Changed RAM to FLASH strings, which allows it to run on an ATmega168.
+### Version 3.3
+- Additional erase if fuses are locked, fixed bug at lock printout, handle unattached button.
+- Blink only 10 seconds after button operation.
 ### Version 3.2
 - Added lock bit readout
 ### Version 3.0
