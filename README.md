@@ -1,7 +1,7 @@
 # Arduino High Voltage Programmer / Eraser for ATtiny
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FATtiny-HighVoltageProgrammer_FuseEraser)](https://github.com/brentvollebregt/hit-counter)
+![Hit Counter](https://visitor-badge.laobi.icu/badge?page_id=ArminJo_ATtiny-HighVoltageProgrammer_FuseEraser)
 
 Based on [Recover Bricked ATtiny Using Arduino as high voltage programmer](http://www.electronics-lab.com/recover-bricked-attiny-using-arduino-as-high-voltage-programmer/).<br/>
 This program restores the default fuse settings of the ATtiny and can perform a chip erase & lock bits reset.<br/>

@@ -80,8 +80,8 @@ bool readLockBits();
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
-#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL) || defined(ARDUINO_attiny3217)
-    delay(2000); // To be able to connect Serial monitor after reset or power up and before first printout
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_PORT_USBVIRTUAL) || defined(SERIAL_USB) /*stm32duino*/|| defined(USBCON) /*STM32_stm32*/|| defined(SERIALUSB_PID) || defined(ARDUINO_attiny3217)
+    delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
 #endif
     // Just to know which program is running on my Arduino
     Serial.println(F("START " __FILE__ "\r\nVersion " VERSION " from " __DATE__));
@@ -379,7 +379,7 @@ uint16_t readSignature() {
     Serial.println(F("Reading signature from connected ATtiny..."));
     uint16_t tSignature = 0;
     uint8_t tValue;
-    for (uint8_t tIndex = 1; tIndex < 3; tIndex++) {
+    for (uint_fast8_t tIndex = 1; tIndex < 3; tIndex++) {
         shiftOut(0x08, 0x4C);
         shiftOut(tIndex, 0x0C);
         shiftOut(0x00, 0x68);
